@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="装修小白自装助手 — 小杨装修日记出品，自装预算规划、装修流程监控、工人比价管理一站式平台，专为装修小白设计">
+  <meta name="author" content="小杨装修日记">
+  <meta name="keywords" content="装修小白,装修流程,装修预算,工人比价,自装助手">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>装修小白自装助手 | 小杨装修日记 · 自装预算 · 流程监控</title>
+  <link rel="stylesheet" href="css/style.css?v=1.1.2">
+  <script src="vendor/chart.umd.min.js?v=1.1.2"></script>
+  <script src="vendor/xlsx.full.min.js?v=1.1.2"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <!-- ========== Sidebar ========== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🏠</div>
+      <div>
+        <div class="sidebar-title">自装助手</div>
+        <div class="sidebar-subtitle">装修小白的好帮手</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">主菜单</div>
+      <button class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="nav-item-icon">📊</span>
+        <span class="nav-item-text">仪表盘</span>
+      </button>
+      <button class="nav-item" data-page="workflow" id="nav-workflow">
+        <span class="nav-item-icon">📋</span>
+        <span class="nav-item-text">装修流程</span>
+        <span class="nav-item-badge" id="workflow-badge">0/9</span>
+      </button>
+      <button class="nav-item" data-page="budget" id="nav-budget">
+        <span class="nav-item-icon">💰</span>
+        <span class="nav-item-text">预算管理</span>
+      </button>
+      <button class="nav-item" data-page="workers" id="nav-workers">
+        <span class="nav-item-icon">👷</span>
+        <span class="nav-item-text">工人管理</span>
+      </button>
+
+      <div class="nav-section-label">工具</div>
+      <button class="nav-item" id="btn-backup-data">
+        <span class="nav-item-icon">📤</span>
+        <span class="nav-item-text">备份我的数据</span>
+      </button>
+      <button class="nav-item" id="btn-import-data">
+        <span class="nav-item-icon">📥</span>
+        <span class="nav-item-text">导入数据</span>
+      </button>
+      <button class="nav-item" id="btn-clear-data">
+        <span class="nav-item-icon">🧹</span>
+        <span class="nav-item-text">清除全部数据</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-local-data">🔒 数据仅保存在当前浏览器<br>不会上传服务器</div>
+      <div style="margin-top:8px; font-size:11px; opacity:0.5;">v1.1 · 本地隐私版</div>
+    </div>
+  </aside>
+
+  <!-- ========== Main Content ========== -->
+  <main class="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="page-header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div>
+          <h1 id="page-title">📊 仪表盘</h1>
+          <p id="page-subtitle">装修进度一览</p>
+        </div>
+      </div>
+      <div class="page-header-actions" id="page-actions"></div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content">
+
+      <!-- ===== Dashboard Page ===== -->
+      <section class="page-section active" id="page-dashboard">
+        <div class="data-privacy-banner" id="data-privacy-banner">
+          <div class="data-privacy-icon">🔒</div>
+          <div class="data-privacy-copy">
+            <strong>你的装修数据只属于你</strong>
+            <span>数据仅保存在当前浏览器，不会上传服务器。清理浏览器数据或更换设备前，请先备份。</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-banner-backup">立即备份</button>
+        </div>
+
+        <div class="backup-reminder" id="backup-reminder" hidden>
+          <div>
+            <strong>该备份一下啦</strong>
+            <p>以后更换正式域名或设备时，需要通过导出、导入迁移数据，无法跨域名自动读取。</p>
+          </div>
+          <div class="backup-reminder-actions">
+            <button class="btn btn-primary btn-sm" id="btn-reminder-backup">现在备份</button>
+            <button class="btn btn-secondary btn-sm" id="btn-dismiss-backup-reminder">30天后提醒</button>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="dashboard-stats"></div>
+        
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Progress Overview -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 装修进度</div>
+            </div>
+            <div id="dashboard-progress"></div>
+          </div>
+
+          <!-- Budget Overview -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💰 预算概览</div>
+            </div>
+            <div class="chart-container" id="dashboard-budget-chart-container">
+              <canvas id="dashboard-budget-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Recent Expenses -->
+          <div class="card full-width">
+            <div class="card-header">
+              <div class="card-title">🧾 最近支出</div>
+            </div>
+            <div id="dashboard-recent-expenses"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Workflow Page ===== -->
+      <section class="page-section" id="page-workflow">
+        <div class="stages-timeline" id="stages-timeline"></div>
+      </section>
+
+      <!-- ===== Budget Page ===== -->
+      <section class="page-section" id="page-budget">
+
+        <!-- House Info & Tier -->
+        <div class="card" style="margin-bottom:var(--space-lg);">
+          <div class="card-header">
+            <div class="card-title">🏡 基本信息</div>
+          </div>
+          <div class="budget-setup">
+            <div class="budget-input-group">
+              <label for="house-area">房屋面积（㎡）</label>
+              <input type="number" class="form-input" id="house-area" placeholder="例如：100" min="1" max="1000">
+            </div>
+            <div class="budget-input-group">
+              <label for="total-budget-input">总预算（元）</label>
+              <input type="number" class="form-input" id="total-budget-input" placeholder="例如：150000" min="0">
+            </div>
+          </div>
+          <div>
+            <label class="form-label" style="margin-bottom:var(--space-sm);display:block;">装修档次参考</label>
+            <div class="tier-selector" id="tier-selector"></div>
+          </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="budget-summary-bar" id="budget-summary-bar"></div>
+
+        <!-- Charts -->
+        <div class="budget-dashboard">
+          <div class="budget-chart-card">
+            <div class="card-header"><div class="card-title">📊 分类占比</div></div>
+            <div class="chart-container" id="budget-pie-chart-container"><canvas id="budget-pie-chart"></canvas></div>
+          </div>
+          <div class="budget-chart-card">
+            <div class="card-header"><div class="card-title">📈 预算 vs 实际</div></div>
+            <div class="chart-container" id="budget-bar-chart-container"><canvas id="budget-bar-chart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Excel-style Spreadsheet -->
+        <div class="card xl-card">
+          <div class="card-header xl-card-header">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <div class="card-title">📊 预算明细表 <span class="xl-hint">（点击单元格直接编辑）</span></div>
+              <button class="btn btn-secondary btn-sm" onclick="exportBudgetExcel()" style="padding:4px 8px; font-size:12px;">📤 导出Excel</button>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('budget-excel-upload').click()" style="padding:4px 8px; font-size:12px;">📥 导入Excel</button>
+              <input type="file" id="budget-excel-upload" accept=".xlsx, .xls, .csv" style="display:none" onchange="importBudgetExcel(event)">
+            </div>
+            <div class="xl-legend">
+              <span class="xl-legend-item" style="--lc:#f97316;">①拆改/设计</span>
+              <span class="xl-legend-item" style="--lc:#3b82f6;">②硬装施工</span>
+              <span class="xl-legend-item" style="--lc:#8b5cf6;">③门窗设备</span>
+              <span class="xl-legend-item" style="--lc:#14b8a6;">④定制柜</span>
+              <span class="xl-legend-item" style="--lc:#f59e0b;">⑤厨卫五金</span>
+              <span class="xl-legend-item" style="--lc:#ec4899;">⑥灯具家电</span>
+              <span class="xl-legend-item" style="--lc:#22c55e;">⑦软装家具</span>
+            </div>
+          </div>
+          <div class="xl-table-scroll">
+            <table class="xl-table" id="bv2-table">
+              <thead>
+                <tr class="xl-thead-row">
+                  <th class="xl-th rownum-th">#</th>
+                  <th class="xl-th cat-th">分类</th>
+                  <th class="xl-th">房间</th>
+                  <th class="xl-th name-th">项目名称</th>
+                  <th class="xl-th brand-th">品牌型号</th>
+                  <th class="xl-th unit-th">单位</th>
+                  <th class="xl-th num-th">工程量</th>
+                  <th class="xl-th num-th">单价(元)</th>
+                  <th class="xl-th num-th budget-th">预算总价</th>
+                  <th class="xl-th num-th actual-th">实际支出</th>
+                  <th class="xl-th num-th diff-th">差价</th>
+                  <th class="xl-th craft-th">施工工艺&amp;验收</th>
+                  <th class="xl-th note-th">备注/优先级</th>
+                  <th class="xl-th del-th">删</th>
+                </tr>
+              </thead>
+              <tbody id="bv2-tbody"></tbody>
+              <tfoot id="bv2-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ===== Workers Page ===== -->
+      <section class="page-section" id="page-workers">
+        <div class="workers-layout">
+          <!-- Worker Types Panel -->
+          <div class="worker-types-panel">
+            <div class="worker-types-header">👷 工种列表</div>
+            <div class="worker-type-list" id="worker-type-list"></div>
+          </div>
+
+          <!-- Worker Detail Panel -->
+          <div class="worker-detail-panel" id="worker-detail-panel">
+            <div class="empty-state">
+              <div class="empty-state-icon">👈</div>
+              <div class="empty-state-text">请从左侧选择一个工种查看详情</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="legal-footer">
+        <div>© 2026 小杨装修日记 · 装修小白自装助手</div>
+        <div>官方访问地址：<span id="official-site-host">正在读取当前网址</span></div>
+        <div>未经许可不得镜像、转售或冒充官方版本</div>
+      </footer>
+
+    </div>
+  </main>
+</div>
+
+<!-- Author Watermark -->
+<div class="author-watermark" id="author-watermark">
+  <button class="author-watermark-toggle" onclick="toggleAuthorCard()" title="关于作者">🏠</button>
+  <div class="author-watermark-card" id="author-card">
+    <div class="author-card-header">
+      <span class="author-card-title">🎬 小杨装修日记</span>
+      <button class="author-card-close" onclick="toggleAuthorCard()">✕</button>
+    </div>
+    <div class="author-card-qr">
+      <img src="images/douyin_qr.png" alt="抖音二维码" onerror="if(this.src.indexOf('.png')!==-1){this.src='images/douyin_qr.jpg';}else{this.parentNode.innerHTML='<div class=author-card-qr-fallback>📱 抖音号<br>59055895949</div>';}">
+    </div>
+    <div class="author-card-info">
+      <div class="author-card-douyin">📱 抖音：@小杨装修日记</div>
+      <div class="author-card-slogan">1.00后情侣 | 安阳 | 全职装婚房</div>
+    </div>
+    <div class="author-card-copyright">© 本工具由小杨装修日记原创开发<br>未经许可不得镜像、转售或冒充官方版本</div>
+  </div>
+</div>
+
+<!-- ========== Modals ========== -->
+
+<!-- Add / Edit Budget Item V2 Modal -->
+<div class="modal-overlay" id="modal-budget-v2">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="bv2-modal-title">添加预算项目</div>
+      <button class="modal-close" onclick="closeModal('modal-budget-v2')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">一级分类 <span class="req">*</span></label>
+          <select class="form-select" id="bv2-cat">
+            <option value="demolition">①前期拆改 / 设计监理</option>
+            <option value="hardwork">②水电 / 瓦 / 木 / 油硬装施工</option>
+            <option value="doors">③门窗暖通设备</option>
+            <option value="custom">④全屋定制柜</option>
+            <option value="sanitary">⑤厨卫洁具五金</option>
+            <option value="lighting">⑥灯具家电</option>
+            <option value="soft">⑦软装家具</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">房间</label>
+          <input type="text" class="form-input" id="bv2-room" placeholder="例如：客厅、主卧、厨房">
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">项目名称 <span class="req">*</span></label>
+          <input type="text" class="form-input" id="bv2-name" placeholder="例如：地砖铺贴、防水施工、橱柜定制">
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">品牌型号</label>
+          <input type="text" class="form-input" id="bv2-brand" placeholder="例如：马可波罗 600×600、金意陶哑光">
+        </div>
+        <div class="form-group">
+          <label class="form-label">单位</label>
+          <input type="text" class="form-input" id="bv2-unit" placeholder="㎡ / 套 / 个 / 米">
+        </div>
+        <div class="form-group">
+          <label class="form-label">工程量</label>
+          <input type="number" class="form-input" id="bv2-qty" placeholder="0" min="0" step="0.01" oninput="calcBv2Budget()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">单价（元）</label>
+          <input type="number" class="form-input" id="bv2-unit-price" placeholder="0" min="0" step="0.01" oninput="calcBv2Budget()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">预算总价（元）</label>
+          <input type="number" class="form-input" id="bv2-budget" placeholder="自动计算或手填" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">实际支出（元）</label>
+          <input type="number" class="form-input" id="bv2-actual" placeholder="0" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">优先级</label>
+          <select class="form-select" id="bv2-priority">
+            <option value="must">🔴 刚需不可省</option>
+            <option value="optional">🟡 可减配</option>
+            <option value="nice">🟢 锦上添花</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">施工工艺 & 验收标准</label>
+          <textarea class="form-textarea" id="bv2-craft" placeholder="例如：地砖错缝铺贴，留缝2mm，验收时用靠尺检查平整度≤3mm" style="height:72px;"></textarea>
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">备注</label>
+          <textarea class="form-textarea" id="bv2-note" placeholder="附加说明、供应商联系方式等" style="height:60px;"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-budget-v2')">取消</button>
+      <button class="btn btn-primary" id="btn-save-bv2">保存</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Add Worker Modal -->
+<div class="modal-overlay" id="modal-add-worker">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">添加工人信息</div>
+      <button class="modal-close" onclick="closeModal('modal-add-worker')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">姓名/称呼</label>
+        <input type="text" class="form-input" id="worker-name" placeholder="例如：张师傅">
+      </div>
+      <div class="form-group">
+        <label class="form-label">电话</label>
+        <input type="tel" class="form-input" id="worker-phone" placeholder="手机号码">
+      </div>
+      <div class="form-group">
+        <label class="form-label">来源渠道</label>
+        <input type="text" class="form-input" id="worker-source" placeholder="例如：朋友推荐、小红书、物业推荐">
+      </div>
+      <div class="form-group">
+        <label class="form-label">报价（元）</label>
+        <input type="number" class="form-input" id="worker-quote" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" id="worker-notes" placeholder="例如：包工包料、工期约2周"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">印象评分</label>
+        <div class="star-rating" id="worker-rating">
+          <button class="star" data-value="1">★</button>
+          <button class="star" data-value="2">★</button>
+          <button class="star" data-value="3">★</button>
+          <button class="star" data-value="4">★</button>
+          <button class="star" data-value="5">★</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-worker')">取消</button>
+      <button class="btn btn-primary" id="btn-save-worker">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Call Record Modal -->
+<div class="modal-overlay" id="modal-add-call">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">记录电话沟通</div>
+      <button class="modal-close" onclick="closeModal('modal-add-call')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">沟通日期</label>
+        <input type="date" class="form-input" id="call-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">沟通内容</label>
+        <textarea class="form-textarea" id="call-content" placeholder="记录电话沟通的关键内容..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">对方报价（元）</label>
+        <input type="number" class="form-input" id="call-quote" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">附加条件</label>
+        <input type="text" class="form-input" id="call-conditions" placeholder="例如：包材料、工期15天、先付30%">
+      </div>
+      <div class="form-group">
+        <label class="form-label">态度评价</label>
+        <div class="star-rating" id="call-attitude">
+          <button class="star" data-value="1">★</button>
+          <button class="star" data-value="2">★</button>
+          <button class="star" data-value="3">★</button>
+          <button class="star" data-value="4">★</button>
+          <button class="star" data-value="5">★</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-call')">取消</button>
+      <button class="btn btn-primary" id="btn-save-call">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+
+<!-- Edit Workflow Modal -->
+<div class="modal-overlay" id="modal-edit-workflow">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="edit-workflow-title">编辑内容</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-workflow')">✕</button>
+    </div>
+    <div class="modal-body" id="edit-workflow-body">
+      <!-- Dynamic fields -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-workflow')">取消</button>
+      <button class="btn btn-primary" id="btn-save-workflow">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clear Data Confirmation Modal -->
+<div class="modal-overlay" id="modal-clear-data">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🧹 清除全部本地数据</div>
+      <button class="modal-close" onclick="closeModal('modal-clear-data')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="danger-confirmation">
+        <strong>此操作无法撤销</strong>
+        <p>预算、流程进度、工人和沟通记录都会从当前浏览器中删除。建议先点击“备份后再清除”。</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-clear-data')">取消</button>
+      <button class="btn btn-secondary" id="btn-backup-before-clear">备份后再清除</button>
+      <button class="btn btn-danger" id="btn-confirm-clear">确认永久清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input for import -->
+<input type="file" id="import-file-input" accept=".json" style="display:none">
+
+<!-- Scripts -->
+<script src="js/storage.js?v=1.1.2"></script>
+<script src="js/data.js?v=1.1.2"></script>
+<script src="js/app.js?v=1.1.2"></script>
+</body>
+</html>
