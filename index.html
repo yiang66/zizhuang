@@ -1,0 +1,1070 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="装修小白自装助手 — 小杨装修日记出品，自装预算规划、装修流程监控、工人比价管理一站式平台，专为装修小白设计">
+  <meta name="author" content="小杨装修日记">
+  <meta name="keywords" content="装修小白,装修流程,装修预算,工人比价,自装助手">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>装修小白自装助手 | 小杨装修日记 · 自装预算 · 流程监控</title>
+  <link rel="stylesheet" href="css/style.css?v=1.1.5">
+  <link rel="stylesheet" href="css/schedule.css?v=1.2.0">
+  <link rel="stylesheet" href="css/decision-helper.css?v=1.1.5">
+  <script src="vendor/chart.umd.min.js?v=1.1.5"></script>
+  <script src="vendor/xlsx.full.min.js?v=1.1.5"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Mobile overlay -->
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+
+  <!-- ========== Sidebar ========== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">🏠</div>
+      <div>
+        <div class="sidebar-title">自装助手</div>
+        <div class="sidebar-subtitle">装修小白的好帮手</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">主菜单</div>
+      <button class="nav-item active" data-page="dashboard" id="nav-dashboard">
+        <span class="nav-item-icon">📊</span>
+        <span class="nav-item-text">仪表盘</span>
+      </button>
+      <button class="nav-item" data-page="workflow" id="nav-workflow">
+        <span class="nav-item-icon">📋</span>
+        <span class="nav-item-text">装修流程</span>
+        <span class="nav-item-badge" id="workflow-badge">0/9</span>
+      </button>
+      <button class="nav-item" data-page="calendar" id="nav-calendar">
+        <span class="nav-item-icon">📅</span>
+        <span class="nav-item-text">排期日历</span>
+      </button>
+      <button class="nav-item" data-page="decision-helper" id="nav-decision-helper">
+        <span class="nav-item-icon">🧭</span>
+        <span class="nav-item-text">决策助手</span>
+      </button>
+      <button class="nav-item" data-page="budget" id="nav-budget">
+        <span class="nav-item-icon">💰</span>
+        <span class="nav-item-text">预算管理</span>
+      </button>
+      <button class="nav-item" data-page="workers" id="nav-workers">
+        <span class="nav-item-icon">👷</span>
+        <span class="nav-item-text">工人管理</span>
+      </button>
+
+      <div class="nav-section-label">工具</div>
+      <button class="nav-item" id="btn-backup-data">
+        <span class="nav-item-icon">📤</span>
+        <span class="nav-item-text">备份我的数据</span>
+      </button>
+      <button class="nav-item" id="btn-import-data">
+        <span class="nav-item-icon">📥</span>
+        <span class="nav-item-text">导入数据</span>
+      </button>
+      <button class="nav-item" id="btn-clear-data">
+        <span class="nav-item-icon">🧹</span>
+        <span class="nav-item-text">清除全部数据</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-local-data">🔒 数据仅保存在当前浏览器<br>不会上传服务器</div>
+      <div style="margin-top:8px; font-size:11px; opacity:0.5;">v1.1 · 本地隐私版</div>
+    </div>
+  </aside>
+
+  <!-- ========== Main Content ========== -->
+  <main class="main-content">
+
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="page-header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+        <div>
+          <h1 id="page-title">📊 仪表盘</h1>
+          <p id="page-subtitle">装修进度一览</p>
+        </div>
+      </div>
+      <div class="page-header-actions" id="page-actions"></div>
+    </header>
+
+    <!-- Page Content -->
+    <div class="page-content">
+
+      <!-- ===== Dashboard Page ===== -->
+      <section class="page-section active" id="page-dashboard">
+        <div class="data-privacy-banner" id="data-privacy-banner">
+          <div class="data-privacy-icon">🔒</div>
+          <div class="data-privacy-copy">
+            <strong>你的装修数据只属于你</strong>
+            <span>数据仅保存在当前浏览器，不会上传服务器。清理浏览器数据或更换设备前，请先备份。</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-banner-backup">立即备份</button>
+        </div>
+
+        <div class="backup-reminder" id="backup-reminder" hidden>
+          <div>
+            <strong>该备份一下啦</strong>
+            <p>以后更换正式域名或设备时，需要通过导出、导入迁移数据，无法跨域名自动读取。</p>
+          </div>
+          <div class="backup-reminder-actions">
+            <button class="btn btn-primary btn-sm" id="btn-reminder-backup">现在备份</button>
+            <button class="btn btn-secondary btn-sm" id="btn-dismiss-backup-reminder">30天后提醒</button>
+          </div>
+        </div>
+
+        <div class="card decision-entry-card">
+          <div>
+            <div class="card-title">🧭 装修前决策助手</div>
+            <p class="decision-entry-copy">5 分钟帮你判断适合整装、半包、工长、自装还是设计师，并生成一份装修前需求确认报告。</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-decision-helper-start>开始测一测</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="dashboard-stats"></div>
+        
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Progress Overview -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 装修进度</div>
+            </div>
+            <div id="dashboard-progress"></div>
+          </div>
+
+          <!-- Budget Overview -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">💰 预算概览</div>
+            </div>
+            <div class="chart-container" id="dashboard-budget-chart-container">
+              <canvas id="dashboard-budget-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Recent Expenses -->
+          <div class="card full-width">
+            <div class="card-header">
+              <div class="card-title">🧾 最近支出</div>
+            </div>
+            <div id="dashboard-recent-expenses"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Workflow Page ===== -->
+      <section class="page-section" id="page-workflow">
+        <div class="mobile-only mobile-stage-quick-nav" id="mobile-stage-quick-nav" aria-label="装修阶段快捷切换"></div>
+        <div class="stages-timeline" id="stages-timeline"></div>
+      </section>
+
+      <!-- ===== Calendar Page ===== -->
+      <section class="page-section" id="page-calendar">
+        <!-- Stats cards -->
+        <div class="cal-stats-grid" id="cal-stats-grid"></div>
+        
+        <!-- Main Layout -->
+        <div class="cal-layout">
+          <!-- Left side: Calendar controls, grid, legend, disclaimer -->
+          <div class="cal-left">
+            <div class="cal-controls">
+              <div class="cal-nav-group">
+                <button class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">◀</button>
+                <button class="btn btn-secondary btn-sm" onclick="goToday()">今天</button>
+                <button class="btn btn-secondary btn-sm" onclick="changeMonth(1)">▶</button>
+                <span class="cal-current-month-title" id="cal-month-title"></span>
+              </div>
+              <div class="cal-action-group">
+                <button class="btn btn-primary btn-sm" onclick="openGenerateModal()">📊 生成/设置排期</button>
+                <button class="btn btn-secondary btn-sm" onclick="openTaskModal()">＋ 新增工序</button>
+                <button class="btn btn-secondary btn-sm" onclick="openNoWorkDayModal()">🚫 设禁装日</button>
+              </div>
+            </div>
+            <div class="cal-weekday-headers">
+              <div class="cal-weekday-header">日</div>
+              <div class="cal-weekday-header">一</div>
+              <div class="cal-weekday-header">二</div>
+              <div class="cal-weekday-header">三</div>
+              <div class="cal-weekday-header">四</div>
+              <div class="cal-weekday-header">五</div>
+              <div class="cal-weekday-header">六</div>
+            </div>
+            <div class="cal-grid" id="calendar-grid"></div>
+            <div class="cal-legend">
+              <span class="cal-legend-item"><span class="legend-color-dot" style="background:#6366f1"></span>进行中工序</span>
+              <span class="cal-legend-item">🔔 材料提醒</span>
+              <span class="cal-legend-item">✅ 验收节点</span>
+              <span class="cal-legend-item">⚠️ 现场问题</span>
+              <span class="cal-legend-item">📝 施工日志</span>
+            </div>
+            <div class="cal-notice">⚠️ 禁装日仅供参考，请以当地当年通告和小区物业规定为准。</div>
+          </div>
+          
+          <!-- Right side: Detail Panel -->
+          <div class="day-panel" id="cal-day-panel">
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <div class="empty-state-text">请在左侧选择一个日期查看详情</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Budget Page ===== -->
+      <section class="page-section" id="page-budget">
+        <div class="card" style="margin-bottom:var(--space-lg);">
+          <div class="card-header">
+            <div class="card-title">🏡 基本信息</div>
+          </div>
+          <div class="budget-setup">
+            <div class="budget-input-group">
+              <label for="house-area">房屋面积（㎡）</label>
+              <input type="number" class="form-input" id="house-area" placeholder="例如：100" min="1" max="1000">
+            </div>
+            <div class="budget-input-group">
+              <label for="total-budget-input">总预算（元）</label>
+              <input type="number" class="form-input" id="total-budget-input" placeholder="例如：150000" min="0">
+            </div>
+          </div>
+          <div>
+            <label class="form-label" style="margin-bottom:var(--space-sm);display:block;">装修档次参考</label>
+            <div class="tier-selector" id="tier-selector"></div>
+          </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="budget-summary-bar" id="budget-summary-bar"></div>
+
+        <!-- Charts -->
+        <div class="budget-dashboard">
+          <div class="budget-chart-card">
+            <div class="card-header"><div class="card-title">📊 分类占比</div></div>
+            <div class="chart-container" id="budget-pie-chart-container"><canvas id="budget-pie-chart"></canvas></div>
+          </div>
+          <div class="budget-chart-card">
+            <div class="card-header"><div class="card-title">📈 预算 vs 实际</div></div>
+            <div class="chart-container" id="budget-bar-chart-container"><canvas id="budget-bar-chart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Mobile budget cards -->
+        <div class="mobile-only mobile-budget-view" id="mobile-budget-view">
+          <div class="mobile-budget-toolbar">
+            <div>
+              <div class="mobile-section-title">预算明细</div>
+              <div class="mobile-section-hint">按分类查看，点卡片即可编辑</div>
+            </div>
+            <button class="btn btn-primary" id="mobile-budget-add" type="button">＋ 添加项目</button>
+          </div>
+          <div class="mobile-budget-actions">
+            <button class="btn btn-secondary" type="button" onclick="exportBudgetExcel()">📤 导出Excel</button>
+            <button class="btn btn-secondary" type="button" onclick="document.getElementById('budget-excel-upload').click()">📥 导入Excel</button>
+          </div>
+          <div class="mobile-chip-row" id="mobile-budget-filters" aria-label="预算分类筛选"></div>
+          <div class="mobile-budget-list" id="mobile-budget-list"></div>
+        </div>
+
+        <!-- Excel-style Spreadsheet -->
+        <div class="card xl-card desktop-budget-table">
+          <div class="card-header xl-card-header">
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <div class="card-title">📊 预算明细表 <span class="xl-hint">（点击单元格直接编辑）</span></div>
+              <button class="btn btn-secondary btn-sm" onclick="exportBudgetExcel()" style="padding:4px 8px; font-size:12px;">📤 导出Excel</button>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('budget-excel-upload').click()" style="padding:4px 8px; font-size:12px;">📥 导入Excel</button>
+              <input type="file" id="budget-excel-upload" accept=".xlsx, .xls, .csv" style="display:none" onchange="importBudgetExcel(event)">
+            </div>
+            <div class="xl-legend">
+              <span class="xl-legend-item" style="--lc:#f97316;">①拆改/设计</span>
+              <span class="xl-legend-item" style="--lc:#3b82f6;">②水电</span>
+              <span class="xl-legend-item" style="--lc:#06b6d4;">②防水</span>
+              <span class="xl-legend-item" style="--lc:#8b5cf6;">②瓦工</span>
+              <span class="xl-legend-item" style="--lc:#a855f7;">②木工</span>
+              <span class="xl-legend-item" style="--lc:#6366f1;">②油工</span>
+              <span class="xl-legend-item" style="--lc:#0ea5e9;">③门窗设备</span>
+              <span class="xl-legend-item" style="--lc:#14b8a6;">④定制柜</span>
+              <span class="xl-legend-item" style="--lc:#f59e0b;">⑤厨卫五金</span>
+              <span class="xl-legend-item" style="--lc:#ec4899;">⑥灯具家电</span>
+              <span class="xl-legend-item" style="--lc:#22c55e;">⑦软装家具</span>
+            </div>
+          </div>
+          <div class="xl-table-scroll">
+            <table class="xl-table" id="bv2-table">
+              <thead>
+                <tr class="xl-thead-row">
+                  <th class="xl-th rownum-th">#</th>
+                  <th class="xl-th cat-th">分类</th>
+                  <th class="xl-th cost-type-th">费用类型</th>
+                  <th class="xl-th">房间</th>
+                  <th class="xl-th name-th">项目名称</th>
+                  <th class="xl-th brand-th">品牌型号</th>
+                  <th class="xl-th unit-th">单位</th>
+                  <th class="xl-th num-th">工程量</th>
+                  <th class="xl-th num-th">单价(元)</th>
+                  <th class="xl-th num-th budget-th">预算总价</th>
+                  <th class="xl-th num-th actual-th">实际支出</th>
+                  <th class="xl-th num-th diff-th">差价</th>
+                  <th class="xl-th craft-th">施工工艺&amp;验收</th>
+                  <th class="xl-th note-th">备注/优先级</th>
+                  <th class="xl-th del-th">删</th>
+                </tr>
+              </thead>
+              <tbody id="bv2-tbody"></tbody>
+              <tfoot id="bv2-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ===== Workers Page ===== -->
+      <section class="page-section" id="page-workers">
+        <div class="mobile-only mobile-worker-tools" id="mobile-worker-tools">
+          <div class="mobile-worker-search-wrap">
+            <span aria-hidden="true">🔎</span>
+            <input type="search" id="mobile-worker-search" class="form-input" placeholder="搜索工种、计价方式" autocomplete="off">
+          </div>
+          <select id="mobile-worker-stage-filter" class="form-select" aria-label="按装修阶段筛选工种">
+            <option value="all">全部阶段</option>
+          </select>
+        </div>
+        <button class="mobile-only mobile-worker-back" id="mobile-worker-back" type="button" onclick="closeMobileWorkerDetail()">← 返回工种列表</button>
+        <div class="workers-layout">
+          <!-- Worker Types Panel -->
+          <div class="worker-types-panel">
+            <div class="worker-types-header">👷 工种列表</div>
+            <div class="worker-type-list" id="worker-type-list"></div>
+          </div>
+
+          <!-- Worker Detail Panel -->
+          <div class="worker-detail-panel" id="worker-detail-panel">
+            <div class="empty-state">
+              <div class="empty-state-icon">👈</div>
+              <div class="empty-state-text">请从左侧选择一个工种查看详情</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Decision Helper Page ===== -->
+      <section class="page-section" id="page-decision-helper">
+        <div id="decision-helper-root"></div>
+      </section>
+
+      <footer class="legal-footer">
+        <div>© 2026 小杨装修日记 · 装修小白自装助手</div>
+        <div>官方访问地址：<span id="official-site-host">正在读取当前网址</span></div>
+        <div>未经许可不得镜像、转售或冒充官方版本</div>
+      </footer>
+
+    </div>
+  </main>
+</div>
+
+<!-- Mobile bottom navigation -->
+<nav class="mobile-only mobile-bottom-nav" id="mobile-bottom-nav" aria-label="手机端主导航">
+  <button class="mobile-nav-item active" type="button" data-mobile-page="dashboard" aria-current="page"><span>📊</span><small>仪表盘</small></button>
+  <button class="mobile-nav-item" type="button" data-mobile-page="workflow"><span>📋</span><small>流程</small></button>
+  <button class="mobile-nav-item" type="button" data-mobile-page="budget"><span>💰</span><small>预算</small></button>
+  <button class="mobile-nav-item" type="button" data-mobile-page="workers"><span>👷</span><small>工人</small></button>
+  <button class="mobile-nav-item" type="button" id="mobile-more-button" aria-expanded="false"><span>•••</span><small>更多</small></button>
+</nav>
+
+<div class="mobile-only mobile-sheet-overlay" id="mobile-more-sheet" aria-hidden="true">
+  <section class="mobile-more-panel" role="dialog" aria-modal="true" aria-labelledby="mobile-more-title">
+    <div class="mobile-sheet-handle" aria-hidden="true"></div>
+    <div class="mobile-sheet-header">
+      <div>
+        <div class="mobile-section-title" id="mobile-more-title">更多工具</div>
+        <div class="mobile-section-hint">数据只保存在当前浏览器</div>
+      </div>
+      <button class="modal-close" id="mobile-more-close" type="button" aria-label="关闭更多工具">✕</button>
+    </div>
+    <div class="mobile-more-actions">
+      <!-- 排期日历 —— 直接导航 -->
+      <button type="button" data-mobile-page="calendar" aria-label="排期日历">
+        <span>📅</span>
+        <strong>排期日历</strong>
+        <small>工种进场、禁装日、验收节点</small>
+      </button>
+      <button type="button" data-mobile-page="decision-helper" aria-label="装修前决策助手">
+        <span>🧭</span>
+        <strong>装修前决策助手</strong>
+        <small>判断装修方式，生成需求报告</small>
+      </button>
+      <button type="button" data-mobile-tool="backup"><span>📤</span><strong>备份我的数据</strong><small>下载 JSON 备份文件</small></button>
+      <button type="button" data-mobile-tool="import"><span>📥</span><strong>导入数据</strong><small>从已有备份恢复</small></button>
+      <button type="button" data-mobile-tool="support"><span>❤️</span><strong>支持作者</strong><small>完全自愿，不影响功能</small></button>
+      <button type="button" class="danger" data-mobile-tool="clear"><span>🧹</span><strong>清除全部数据</strong><small>操作前建议先备份</small></button>
+    </div>
+  </section>
+</div>
+
+<div class="mobile-only mobile-sheet-overlay" id="mobile-confirm-sheet" aria-hidden="true">
+  <section class="mobile-more-panel mobile-confirm-panel" role="alertdialog" aria-modal="true" aria-labelledby="mobile-confirm-title">
+    <div class="mobile-sheet-handle" aria-hidden="true"></div>
+    <div class="mobile-section-title" id="mobile-confirm-title">确认操作</div>
+    <p id="mobile-confirm-message">请确认是否继续。</p>
+    <div class="mobile-confirm-actions">
+      <button class="btn btn-secondary" id="mobile-confirm-cancel" type="button">取消</button>
+      <button class="btn btn-danger" id="mobile-confirm-ok" type="button">确认</button>
+    </div>
+  </section>
+</div>
+
+<!-- Author Watermark -->
+      <div class="author-card-douyin">📱 抖音：@小杨装修日记</div>
+      <div class="author-card-slogan">1.00后情侣 | 安阳 | 全职装婚房</div>
+    </div>
+    <div class="author-card-copyright">© 本工具由小杨装修日记原创开发<br>未经许可不得镜像、转售或冒充官方版本</div>
+  </div>
+</div>
+
+<!-- ========== Modals ========== -->
+
+<!-- Add / Edit Budget Item V2 Modal -->
+<div class="modal-overlay" id="modal-budget-v2">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="bv2-modal-title">添加预算项目</div>
+      <button class="modal-close" onclick="closeModal('modal-budget-v2')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">分类 <span class="req">*</span></label>
+          <select class="form-select" id="bv2-cat">
+            <optgroup label="①前期">
+              <option value="demolition">①前期拆改 / 设计监理</option>
+            </optgroup>
+            <optgroup label="②基装施工">
+              <option value="plumbing">②-A 水电改造</option>
+              <option value="waterproof">②-B 防水工程</option>
+              <option value="tiling">②-C 瓦工（泥瓦）</option>
+              <option value="carpentry">②-D 木工</option>
+              <option value="painting">②-E 油工（涂料）</option>
+            </optgroup>
+            <optgroup label="③以后">
+              <option value="doors">③门窗暖通设备</option>
+              <option value="custom">④全屋定制柜</option>
+              <option value="sanitary">⑤厨卫洁具五金</option>
+              <option value="lighting">⑥灯具家电</option>
+              <option value="soft">⑦软装家具</option>
+            </optgroup>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">费用类型 <span class="req">*</span></label>
+          <select class="form-select" id="bv2-cost-type">
+            <option value="">— 请选择 —</option>
+            <option value="main-material">主材</option>
+            <option value="sub-material">辅材</option>
+            <option value="labor">工费</option>
+            <option value="package">包工包料</option>
+            <option value="misc">杂项</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">房间</label>
+          <input type="text" class="form-input" id="bv2-room" placeholder="例如：客厅、主卧、厨房">
+        </div>
+        <div class="form-group" style="grid-column: span 2;">
+          <label class="form-label">项目名称 <span class="req">*</span></label>
+          <input type="text" class="form-input" id="bv2-name" placeholder="例如：地砖铺贴、防水施工、橱柜定制">
+        </div>
+        <div class="form-group">
+          <label class="form-label">单位</label>
+          <input type="text" class="form-input" id="bv2-unit" placeholder="㎡ / 套 / 个 / 米">
+        </div>
+        <div class="form-group">
+          <label class="form-label">工程量</label>
+          <input type="number" class="form-input" id="bv2-qty" placeholder="0" min="0" step="0.01" oninput="calcBv2Budget()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">单价（元）</label>
+          <input type="number" class="form-input" id="bv2-unit-price" placeholder="0" min="0" step="0.01" oninput="calcBv2Budget()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">预算总价（元）</label>
+          <input type="number" class="form-input" id="bv2-budget" placeholder="自动计算或手填" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">实际支出（元）</label>
+          <input type="number" class="form-input" id="bv2-actual" placeholder="0" min="0">
+        </div>
+        <div class="mobile-budget-advanced">
+          <button class="mobile-only mobile-advanced-toggle" id="mobile-budget-advanced-toggle" type="button" aria-expanded="false">＋ 品牌、工艺与备注</button>
+          <div class="advanced-fields">
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label">品牌型号</label>
+              <input type="text" class="form-input" id="bv2-brand" placeholder="例如：马可波罗 600×600、金意陶哑光">
+            </div>
+            <div class="form-group">
+              <label class="form-label">优先级</label>
+              <select class="form-select" id="bv2-priority">
+                <option value="must">🔴 刚需不可省</option>
+                <option value="optional">🟡 可减配</option>
+                <option value="nice">🟢 锦上添花</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label">施工工艺 & 验收标准</label>
+              <textarea class="form-textarea" id="bv2-craft" placeholder="例如：地砖错缝铺贴，留缝2mm，验收时用靠尺检查平整度≤3mm" style="height:72px;"></textarea>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+              <label class="form-label">备注</label>
+              <textarea class="form-textarea" id="bv2-note" placeholder="附加说明、供应商联系方式等" style="height:60px;"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger mobile-only" id="mobile-delete-bv2" type="button" hidden>删除项目</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-budget-v2')">取消</button>
+      <button class="btn btn-primary" id="btn-save-bv2">保存</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Add Worker Modal -->
+<div class="modal-overlay" id="modal-add-worker">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">添加工人信息</div>
+      <button class="modal-close" onclick="closeModal('modal-add-worker')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">姓名/称呼</label>
+        <input type="text" class="form-input" id="worker-name" placeholder="例如：张师傅">
+      </div>
+      <div class="form-group">
+        <label class="form-label">电话</label>
+        <input type="tel" class="form-input" id="worker-phone" placeholder="手机号码">
+      </div>
+      <div class="form-group">
+        <label class="form-label">来源渠道</label>
+        <input type="text" class="form-input" id="worker-source" placeholder="例如：朋友推荐、小红书、物业推荐">
+      </div>
+      <div class="form-group">
+        <label class="form-label">报价（元）</label>
+        <input type="number" class="form-input" id="worker-quote" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" id="worker-notes" placeholder="例如：包工包料、工期约2周"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">印象评分</label>
+        <div class="star-rating" id="worker-rating">
+          <button class="star" data-value="1">★</button>
+          <button class="star" data-value="2">★</button>
+          <button class="star" data-value="3">★</button>
+          <button class="star" data-value="4">★</button>
+          <button class="star" data-value="5">★</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-worker')">取消</button>
+      <button class="btn btn-primary" id="btn-save-worker">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Call Record Modal -->
+<div class="modal-overlay" id="modal-add-call">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">记录电话沟通</div>
+      <button class="modal-close" onclick="closeModal('modal-add-call')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">沟通日期</label>
+        <input type="date" class="form-input" id="call-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">沟通内容</label>
+        <textarea class="form-textarea" id="call-content" placeholder="记录电话沟通的关键内容..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">对方报价（元）</label>
+        <input type="number" class="form-input" id="call-quote" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">附加条件</label>
+        <input type="text" class="form-input" id="call-conditions" placeholder="例如：包材料、工期15天、先付30%">
+      </div>
+      <div class="form-group">
+        <label class="form-label">态度评价</label>
+        <div class="star-rating" id="call-attitude">
+          <button class="star" data-value="1">★</button>
+          <button class="star" data-value="2">★</button>
+          <button class="star" data-value="3">★</button>
+          <button class="star" data-value="4">★</button>
+          <button class="star" data-value="5">★</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-call')">取消</button>
+      <button class="btn btn-primary" id="btn-save-call">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+
+<!-- Edit Workflow Modal -->
+<div class="modal-overlay" id="modal-edit-workflow">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="edit-workflow-title">编辑内容</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-workflow')">✕</button>
+    </div>
+    <div class="modal-body" id="edit-workflow-body">
+      <!-- Dynamic fields -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-workflow')">取消</button>
+      <button class="btn btn-primary" id="btn-save-workflow">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Clear Data Confirmation Modal -->
+<div class="modal-overlay" id="modal-clear-data">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">🧹 清除全部本地数据</div>
+      <button class="modal-close" onclick="closeModal('modal-clear-data')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="danger-confirmation">
+        <strong>此操作无法撤销</strong>
+        <p>预算、流程进度、工人和沟通记录都会从当前浏览器中删除。建议先点击“备份后再清除”。</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-clear-data')">取消</button>
+      <button class="btn btn-secondary" id="btn-backup-before-clear">备份后再清除</button>
+      <button class="btn btn-danger" id="btn-confirm-clear">确认永久清除</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 排期日历 Modals ===== -->
+
+<!-- 生成排期 -->
+<div class="modal-overlay" id="modal-gen-schedule">
+  <div class="modal cal-modal">
+    <div class="modal-header">
+      <div class="modal-title">📅 生成装修排期</div>
+      <button class="modal-close" onclick="closeModal('modal-gen-schedule')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">开工日期 <span class="req">*</span></label>
+        <input type="date" class="form-input" id="gen-start-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">排期模板</label>
+        <select class="form-select" id="gen-type">
+          <option value="full">全屋硬装 + 主材安装（13道工序）</option>
+          <option value="hardwork">全屋硬装不含主材（10道工序）</option>
+          <option value="partial">局部改造（前4道工序）</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">禁装日设置</label>
+        <div class="cal-checkbox-row">
+          <label class="form-checkbox-label"><input type="checkbox" id="gen-sat-nowork"> 周六禁装</label>
+          <label class="form-checkbox-label"><input type="checkbox" id="gen-sun-nowork"> 周日禁装</label>
+          <label class="form-checkbox-label"><input type="checkbox" id="gen-allow-quiet"> 禁装日允许低噪声施工</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">自动生成</label>
+        <div class="cal-checkbox-row">
+          <label class="form-checkbox-label"><input type="checkbox" id="gen-auto-material"> 自动生成材料提醒</label>
+          <label class="form-checkbox-label"><input type="checkbox" id="gen-auto-acceptance"> 自动生成验收节点</label>
+        </div>
+      </div>
+      <div class="cal-notice-inline">⚠️ 禁装日仅供参考，请以当地当年通告和小区物业规定为准。</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-gen-schedule')">取消</button>
+      <button class="btn btn-primary" onclick="submitGenerateSchedule()">生成排期</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/编辑工序 -->
+<div class="modal-overlay" id="modal-task-edit">
+  <div class="modal cal-modal cal-modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-task-edit-title">新增工序</div>
+      <button class="modal-close" onclick="closeModal('modal-task-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="te-task-id">
+      <div class="form-group">
+        <label class="form-label">工序名称 <span class="req">*</span></label>
+        <input type="text" class="form-input" id="te-name" placeholder="例如：水电改造、瓦工阶段">
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">开始日期 <span class="req">*</span></label>
+          <input type="date" class="form-input" id="te-start-date" onchange="updateTaskCalcEndDate()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">预计施工天数 <span class="req">*</span></label>
+          <input type="number" class="form-input" id="te-work-days" min="1" placeholder="施工日（自动跳过禁装日）" onchange="updateTaskCalcEndDate()" oninput="updateTaskCalcEndDate()">
+        </div>
+      </div>
+      <div id="te-calc-end-date" class="cal-end-date-hint"></div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">关联工人（从工人管理选）</label>
+          <select class="form-select" id="te-worker-id"><option value="">-- 不关联 --</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">或手动填写工人姓名</label>
+          <input type="text" class="form-input" id="te-worker-name" placeholder="张师傅">
+        </div>
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">施工区域</label>
+          <input type="text" class="form-input" id="te-area" placeholder="卫生间、厨房、全屋">
+        </div>
+        <div class="form-group">
+          <label class="form-label">施工内容简述</label>
+          <input type="text" class="form-input" id="te-content" placeholder="简述工序内容">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">显示颜色</label>
+        <div id="te-color-picker" class="color-swatch-group"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">属性</label>
+        <div class="cal-checkbox-row">
+          <label class="form-checkbox-label"><input type="checkbox" id="te-is-noisy"> 🔊 高噪声施工（拆改/开槽等）</label>
+          <label class="form-checkbox-label"><input type="checkbox" id="te-needs-acceptance"> ✅ 需要验收</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" id="te-note" placeholder="其他备注..." style="height:60px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-task-edit')">取消</button>
+      <button class="btn btn-primary" onclick="saveTaskForm()">保存工序</button>
+    </div>
+  </div>
+</div>
+
+<!-- 添加禁装日 -->
+<div class="modal-overlay" id="modal-nwd-edit">
+  <div class="modal cal-modal">
+    <div class="modal-header">
+      <div class="modal-title">🚫 添加禁装日</div>
+      <button class="modal-close" onclick="closeModal('modal-nwd-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="nwd-id">
+      <div class="form-group">
+        <label class="form-label">日期 <span class="req">*</span></label>
+        <input type="date" class="form-input" id="nwd-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">禁装原因 <span class="req">*</span></label>
+        <input type="text" class="form-input" id="nwd-reason" placeholder="例如：中考禁噪、物业通知停工">
+      </div>
+      <div class="form-group">
+        <label class="form-label">禁装类型</label>
+        <select class="form-select" id="nwd-type">
+          <option value="weekend">周末</option>
+          <option value="holiday">法定节假日</option>
+          <option value="exam">中高考禁噪</option>
+          <option value="property">物业通知</option>
+          <option value="custom">用户自定义</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-checkbox-label">
+          <input type="checkbox" id="nwd-allow-quiet"> 允许低噪声施工（量尺、验收、材料整理等）
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" id="nwd-note" style="height:60px"></textarea>
+      </div>
+      <div class="cal-notice-inline">⚠️ 禁装日仅供参考，请以当地当年通告和小区物业规定为准。</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-nwd-edit')">取消</button>
+      <button class="btn btn-primary" onclick="saveNoWorkDayForm()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 材料提醒 -->
+<div class="modal-overlay" id="modal-mat-edit">
+  <div class="modal cal-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-mat-title">添加材料提醒</div>
+      <button class="modal-close" onclick="closeModal('modal-mat-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mat-id">
+      <div class="form-group">
+        <label class="form-label">材料名称 <span class="req">*</span></label>
+        <input type="text" class="form-input" id="mat-name" placeholder="例如：电线、瓷砖、地漏">
+      </div>
+      <div class="form-group">
+        <label class="form-label">关联工序</label>
+        <select class="form-select" id="mat-task-id" onchange="onMatTaskChange()"><option value="">-- 不关联 --</option></select>
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">提醒日期</label>
+          <input type="date" class="form-input" id="mat-remind-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">预计到场日期</label>
+          <input type="date" class="form-input" id="mat-expected-date">
+        </div>
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">实际到场日期</label>
+          <input type="date" class="form-input" id="mat-actual-date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">状态</label>
+          <select class="form-select" id="mat-status">
+            <option value="pending">待购买</option>
+            <option value="purchased">已购买</option>
+            <option value="shipping">运输中</option>
+            <option value="arrived">已到场</option>
+            <option value="issue">异常</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" id="mat-note" style="height:60px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-mat-edit')">取消</button>
+      <button class="btn btn-primary" onclick="saveMaterialForm()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 验收节点 -->
+<div class="modal-overlay" id="modal-acc-edit">
+  <div class="modal cal-modal cal-modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-acc-title">添加验收节点</div>
+      <button class="modal-close" onclick="closeModal('modal-acc-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="acc-id">
+      <div class="form-group">
+        <label class="form-label">验收名称 <span class="req">*</span></label>
+        <input type="text" class="form-input" id="acc-name" placeholder="例如：水电验收、闭水试验">
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">关联工序</label>
+          <select class="form-select" id="acc-task-id" onchange="onAccTaskChange()"><option value="">-- 不关联 --</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">验收日期 <span class="req">*</span></label>
+          <input type="date" class="form-input" id="acc-date">
+        </div>
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">验收结果</label>
+          <select class="form-select" id="acc-result">
+            <option value="not-checked">未验收</option>
+            <option value="passed">通过 ✅</option>
+            <option value="failed">不通过 ❌</option>
+            <option value="conditional">有条件通过 ⚡</option>
+          </select>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:12px">
+          <label class="form-checkbox-label">
+            <input type="checkbox" id="acc-allow-next"> 允许下道工序进场
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">验收清单</label>
+        <div id="acc-checklist" class="acc-checklist-container"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" id="acc-note" style="height:60px" placeholder="验收结论、整改要求..."></textarea>
+      </div>
+      <div class="cal-notice-inline">✅ 验收记录仅供留痕参考，不代表系统自动判定最终责任。</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-acc-edit')">取消</button>
+      <button class="btn btn-primary" onclick="saveAcceptanceForm()">保存验收节点</button>
+    </div>
+  </div>
+</div>
+
+<!-- 每日施工日志 -->
+<div class="modal-overlay" id="modal-log-edit">
+  <div class="modal cal-modal cal-modal-lg">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-log-title">📝 施工日志</div>
+      <button class="modal-close" onclick="closeModal('modal-log-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="log-date">
+      <div class="form-group">
+        <label class="form-label">今日施工内容</label>
+        <textarea class="form-textarea" id="log-work-content" placeholder="描述今天做了哪些工作..." style="height:80px"></textarea>
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">到场工人</label>
+          <input type="text" class="form-input" id="log-workers-text" placeholder="张师傅、李师傅">
+        </div>
+        <div class="form-group">
+          <label class="form-label">材料情况</label>
+          <input type="text" class="form-input" id="log-material-status" placeholder="到场/缺货/异常等">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">现场问题</label>
+        <textarea class="form-textarea" id="log-issues-text" placeholder="记录发现的问题，方便后续跟进..." style="height:60px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">明日计划</label>
+        <textarea class="form-textarea" id="log-tomorrow-plan" placeholder="明天预计安排..." style="height:60px"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">其他备注</label>
+        <textarea class="form-textarea" id="log-note" style="height:50px"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-log-edit')">取消</button>
+      <button class="btn btn-primary" onclick="saveLogForm()">保存日志</button>
+    </div>
+  </div>
+</div>
+
+<!-- 问题记录 -->
+<div class="modal-overlay" id="modal-iss-edit">
+  <div class="modal cal-modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-iss-title">⚠️ 添加问题记录</div>
+      <button class="modal-close" onclick="closeModal('modal-iss-edit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="iss-id">
+      <input type="hidden" id="iss-date">
+      <div class="form-group">
+        <label class="form-label">问题描述 <span class="req">*</span></label>
+        <textarea class="form-textarea" id="iss-description" placeholder="描述发现的问题，越详细越好..." style="height:80px"></textarea>
+      </div>
+      <div class="bv2-form-grid">
+        <div class="form-group">
+          <label class="form-label">责任人</label>
+          <input type="text" class="form-input" id="iss-responsible" placeholder="水电工、瓦工...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">解决期限</label>
+          <input type="date" class="form-input" id="iss-deadline">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">状态</label>
+        <select class="form-select" id="iss-status">
+          <option value="pending">待处理</option>
+          <option value="processing">处理中</option>
+          <option value="resolved">已解决</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">备注</label>
+        <textarea class="form-textarea" id="iss-note" style="height:60px" placeholder="处理方式、进展..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-iss-edit')">取消</button>
+      <button class="btn btn-primary" onclick="saveIssueForm()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 顺延确认 -->
+<div class="modal-overlay" id="modal-postpone">
+  <div class="modal cal-modal">
+    <div class="modal-header">
+      <div class="modal-title">⏩ 工序延期顺延</div>
+      <button class="modal-close" onclick="closeModal('modal-postpone')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px">工序已标记为「异常延期」，是否需要顺延后续未开始的工序？</p>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px">系统将顺延此工序之后、状态为「未开始」的所有工序，并同步调整相关材料提醒和验收节点日期。</p>
+      <div class="cal-radio-group">
+        <label class="cal-radio-label"><input type="radio" name="postpone-option" value="none" checked onchange="togglePostponeCustom(this.value)"> 不顺延</label>
+        <label class="cal-radio-label"><input type="radio" name="postpone-option" value="1" onchange="togglePostponeCustom(this.value)"> 顺延 1 个工作日</label>
+        <label class="cal-radio-label"><input type="radio" name="postpone-option" value="2" onchange="togglePostponeCustom(this.value)"> 顺延 2 个工作日</label>
+        <label class="cal-radio-label"><input type="radio" name="postpone-option" value="3" onchange="togglePostponeCustom(this.value)"> 顺延 3 个工作日</label>
+        <label class="cal-radio-label"><input type="radio" name="postpone-option" value="custom" onchange="togglePostponeCustom(this.value)"> 自定义天数</label>
+      </div>
+      <input type="number" class="form-input" id="postpone-custom-days" min="1" max="90" placeholder="输入工作日天数" style="margin-top:10px;display:none">
+      <input type="hidden" id="postpone-task-id">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-postpone');if(typeof refreshCalendarView==='function')refreshCalendarView()">取消</button>
+      <button class="btn btn-primary" onclick="executePostpone()">确认顺延</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Hidden file input for import -->
+<input type="file" id="import-file-input" accept=".json" style="display:none">
+
+<!-- Scripts -->
+<script src="js/storage.js?v=1.1.5"></script>
+<script src="js/data.js?v=1.1.5"></script>
+<script src="js/decision-helper-data.js?v=1.1.5"></script>
+<script src="js/decision-helper-scoring.js?v=1.1.5"></script>
+<script src="js/decision-helper-reminders.js?v=1.1.5"></script>
+<script src="js/decision-helper-linked-planning.js?v=1.1.5"></script>
+<script src="js/app.js?v=1.1.5"></script>
+<script src="js/schedule.js?v=1.2.0"></script>
+<script src="js/decision-helper.js?v=1.1.5"></script>
+</body>
+</html>
+
